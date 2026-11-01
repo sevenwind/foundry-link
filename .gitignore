@@ -1,0 +1,8 @@
+.DS_Store
+.build/
+*.app/
+dist/
+build/
+*.log
+natcheck-report.txt
+natcheck-pair-report.txt

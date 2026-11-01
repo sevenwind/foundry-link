@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="fl-token" content="{{TOKEN}}">
+<title>Foundry Link</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><circle cx="6" cy="13" r="4" fill="var(--accent)"/><circle cx="20" cy="6" r="3" fill="var(--accent)" opacity=".7"/><circle cx="20" cy="20" r="3" fill="var(--accent)" opacity=".7"/><path d="M9.5 11.5 17.5 7M9.5 14.5l8 4.5" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round" opacity=".8"/></svg>
+    <span>Foundry Link</span><span class="ver" id="ver"></span>
+  </div>
+  <div class="top-right">
+    <span id="conn-lost" class="chip bad" hidden>нет связи с приложением</span>
+    <button class="ghost" data-act="change-role" id="btn-role" hidden>Сменить роль</button>
+    <button class="ghost danger" data-act="quit">Выйти</button>
+  </div>
+</header>
+
+<main>
+  <!-- Выбор роли -->
+  <section id="v-choose" hidden>
+    <h1>Кто вы в этой игре?</h1>
+    <div class="choose">
+      <button class="role" data-act="role-host">
+        <span class="emoji">🎲</span>
+        <b>Я мастер (хост)</b>
+        <span>Foundry запущен у меня. Игроки подключаются ко мне напрямую, без VPN и серверов.</span>
+      </button>
+      <button class="role" data-act="role-player">
+        <span class="emoji">🧙</span>
+        <b>Я игрок</b>
+        <span>Хочу зайти в игру мастера. Нужен код комнаты, который он пришлёт.</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- Хост -->
+  <section id="v-host" hidden>
+    <div id="host-stopped" class="card" hidden>
+      <h2>Хост остановлен</h2>
+      <p class="hint">Игроки не могут подключиться. Список игроков сохранён.</p>
+      <button class="primary" data-act="host-start">Запустить хост</button>
+    </div>
+    <div id="host-main">
+      <div class="tiles">
+        <div class="tile" id="t-foundry"><div class="k">Foundry</div><div class="v" id="foundry-v">…</div><div class="s" id="foundry-s"></div></div>
+        <div class="tile" id="t-net"><div class="k">Сеть</div><div class="v" id="net-v">…</div><div class="s" id="net-s"></div></div>
+        <div class="tile" id="t-online"><div class="k">Игроки</div><div class="v" id="online-v">0</div><div class="s" id="online-s"></div></div>
+      </div>
+
+      <div class="card">
+        <h2><span class="step">1</span>Код комнаты</h2>
+        <p class="hint">Отправьте этот код всем игрокам (он один для всех).</p>
+        <div class="codebox"><code id="host-code">Определяю адрес…</code><button class="primary" data-act="copy-host-code" id="btn-copy-host">Копировать</button></div>
+        <div id="nat-warn" class="notice bad" hidden></div>
+      </div>
+
+      <div class="card">
+        <h2><span class="step">2</span>Ответные коды игроков</h2>
+        <p class="hint">Игрок вставляет ваш код и присылает вам свой ответный. Вставьте его сюда, можно сразу несколько, каждый с новой строки. Вставка кода и есть допуск игрока.</p>
+        <textarea id="add-text" rows="3" placeholder="FL1-…" spellcheck="false"></textarea>
+        <div class="row"><button class="primary" data-act="host-add">Добавить игроков</button><span id="add-msg" class="msg"></span></div>
+      </div>
+
+      <div class="card">
+        <h2>Игроки <span class="count" id="players-count"></span></h2>
+        <div id="players"></div>
+      </div>
+
+      <details class="card">
+        <summary>Настройки хоста</summary>
+        <div class="form">
+          <label>Ваше имя<input id="s-hostname" type="text" maxlength="40"></label>
+          <label>Порт Foundry на этом компьютере<input id="s-fport" type="number" min="1" max="65535"></label>
+          <div class="row"><button data-act="host-save">Сохранить</button><button class="danger" data-act="host-stop">Остановить хост</button></div>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- Игрок -->
+  <section id="v-player" hidden>
+    <div id="join-card" class="card" hidden>
+      <h2>Подключение к мастеру</h2>
+      <div class="form">
+        <label>Ваше имя (увидит мастер)<input id="p-name" type="text" maxlength="24" placeholder="Например, Гэндальф"></label>
+        <label>Код комнаты от мастера<textarea id="p-room" rows="3" placeholder="FL1-…" spellcheck="false"></textarea></label>
+        <div class="row"><button class="primary" data-act="player-start">Подключиться</button><span id="join-msg" class="msg"></span></div>
+      </div>
+    </div>
+
+    <div id="player-main" hidden>
+      <div class="card hero" id="hero">
+        <div class="hero-top">
+          <div>
+            <div class="state" id="p-state">…</div>
+            <div class="sub" id="p-sub"></div>
+          </div>
+          <span class="badge" id="p-badge"></span>
+        </div>
+        <div class="hero-body" id="p-body">
+          <div class="ping"><span class="num" id="p-ping">—</span><span class="unit">мс</span></div>
+          <canvas id="p-spark" class="spark"></canvas>
+        </div>
+        <div class="metrics" id="p-metrics"></div>
+        <div class="row">
+          <a class="btn primary big" id="p-open" href="#" target="_blank" rel="noopener">Открыть Foundry</a>
+          <button data-act="copy-local" id="p-copy-local">Копировать адрес</button>
+          <button class="danger" data-act="player-stop">Отключиться</button>
+        </div>
+      </div>
+
+      <div class="card" id="reply-card">
+        <h2><span class="step">!</span>Ваш ответный код</h2>
+        <p class="hint" id="reply-hint">Отправьте этот код мастеру. Пока он не вставит его у себя, подключиться нельзя.</p>
+        <div class="codebox"><code id="reply-code">Определяю адрес…</code><button class="primary" data-act="copy-reply" id="btn-copy-reply">Копировать</button></div>
+      </div>
+
+      <details class="card">
+        <summary>Настройки</summary>
+        <div class="form">
+          <label>Локальный порт (в браузере: localhost:порт)<input id="s-lport" type="number" min="1" max="65535"></label>
+          <div class="row"><button data-act="player-save">Сохранить</button><span class="hint">Применится при следующем подключении.</span></div>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <details class="card log-card" id="log-card" hidden>
+    <summary>Журнал</summary>
+    <pre id="log"></pre>
+  </details>
+</main>
+<div id="toast" role="status"></div>
+<script src="/app.js"></script>
+</body>
+</html>
