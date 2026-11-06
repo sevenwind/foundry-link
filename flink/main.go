@@ -21,7 +21,7 @@ import (
 	"time"
 )
 
-const version = "1.0.0"
+const version = "1.1.0"
 
 func openBrowser(url string) {
 	var cmd *exec.Cmd

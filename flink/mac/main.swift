@@ -8,6 +8,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
     var web: WKWebView!
     var core: Process?
     var uiURL: URL?
+    var engineQuit = false
 
     func applicationDidFinishLaunching(_ n: Notification) {
         buildMenu()
@@ -52,8 +53,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
                 }
             }
         }
-        p.terminationHandler = { [weak self] _ in
-            DispatchQueue.main.async { if self?.uiURL == nil { self?.fail("Сетевой движок не запустился.") } }
+        p.terminationHandler = { [weak self] proc in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                if self.uiURL == nil { self.fail("Сетевой движок не запустился."); return }
+                if proc.terminationStatus == 0 { // «Выйти» в интерфейсе: движок завершился штатно
+                    self.engineQuit = true
+                    NSApp.terminate(nil)
+                } else {
+                    self.fail("Сетевой движок неожиданно остановился (код \(proc.terminationStatus)). Перезапустите приложение.")
+                }
+            }
         }
         do { try p.run(); core = p } catch { fail("Не удалось запустить движок: \(error.localizedDescription)") }
     }
@@ -71,6 +81,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
     }
 
     func applicationShouldTerminate(_ s: NSApplication) -> NSApplication.TerminateReply {
+        if engineQuit { return .terminateNow }
         let a = NSAlert()
         a.messageText = "Выйти из Foundry Link?"
         a.informativeText = "Все подключения (мастера и игроков) будут разорваны."

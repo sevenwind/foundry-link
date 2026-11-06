@@ -2,6 +2,7 @@
 const TOKEN = document.querySelector('meta[name=fl-token]').content;
 const $ = (s) => document.querySelector(s);
 let S = null;          // последнее состояние
+let quitting = false;  // пользователь нажал «Выйти»
 let busy = false;      // идёт запрос действия
 
 // ---------- утилиты ----------
@@ -37,7 +38,7 @@ async function api(path, body) {
     if (j.state) render(j.state);
     return j;
   } catch (e) {
-    toast('Нет связи с приложением', true);
+    if (!quitting) toast('Нет связи с приложением', true);
     return { ok: false, error: String(e) };
   } finally { busy = false; }
 }
@@ -217,7 +218,18 @@ document.addEventListener('click', async (e) => {
       if (active && !confirm('Сейчас есть активное подключение. Сменить роль и отключиться?')) return;
       await api('mode', { mode: '' }); break;
     }
-    case 'quit': if (confirm('Выйти из Foundry Link? Все подключения будут разорваны.')) await api('quit'); break;
+    case 'quit':
+      if (confirm('Выйти из Foundry Link? Все подключения будут разорваны.')) {
+        quitting = true;
+        await api('quit');
+        document.body.innerHTML = '<p style="font:16px system-ui;text-align:center;margin:20vh 16px;color:#98a0b3">Foundry Link закрыт. Это окно можно закрыть.</p>';
+      }
+      break;
+    case 'copy-log': {
+      const txt = (S && S.log || []).join('\n');
+      if (txt) copy(txt, 'Журнал скопирован'); else toast('Журнал пуст', true);
+      break;
+    }
     case 'copy-host-code': if (S.host?.code) copy(S.host.code, 'Код комнаты скопирован'); break;
     case 'copy-reply': if (S.player?.replyCode) copy(S.player.replyCode, 'Ответный код скопирован'); break;
     case 'copy-local': if (S.player) copy(S.player.localUrl, 'Адрес скопирован'); break;
@@ -259,7 +271,7 @@ document.addEventListener('click', async (e) => {
 function connect() {
   const es = new EventSource('/api/events?t=' + TOKEN);
   es.onmessage = (m) => { $('#conn-lost').hidden = true; if (!busy) render(JSON.parse(m.data)); };
-  es.onerror = () => { $('#conn-lost').hidden = false; };
+  es.onerror = () => { if (!quitting) $('#conn-lost').hidden = false; };
 }
 connect();
 window.addEventListener('resize', drawAllSparks);
