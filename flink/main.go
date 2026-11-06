@@ -21,7 +21,7 @@ import (
 	"time"
 )
 
-const version = "1.1.0"
+const version = "1.1.1"
 
 func openBrowser(url string) {
 	var cmd *exec.Cmd
@@ -99,6 +99,7 @@ func main() {
 	}
 	ui := newUI(core, port)
 	core.Resume()
+	core.startUpdateCheck()
 
 	go func() {
 		sig := make(chan os.Signal, 1)

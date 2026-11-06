@@ -281,6 +281,7 @@ type State struct {
 	Settings SettingsView `json:"settings"`
 	Log      []string     `json:"log"`
 	MaxPlay  int          `json:"maxPlayers"`
+	Update   *UpdateView  `json:"update"`
 }
 
 func (c *Core) State() State {
@@ -288,7 +289,7 @@ func (c *Core) State() State {
 	n, h, p := c.net, c.host, c.player
 	c.mu.Unlock()
 	s := c.st.Get()
-	st := State{Version: c.opts.Version, Mode: s.Mode, MaxPlay: maxPlayers, Log: c.logs.tail(80),
+	st := State{Version: c.opts.Version, Mode: s.Mode, MaxPlay: maxPlayers, Log: c.logs.tail(80), Update: latestUpdate.Load(),
 		Settings: SettingsView{HostName: s.HostName, PlayerName: s.PlayerName, FoundryPort: s.FoundryPort, LocalPort: s.LocalPort, RoomCode: s.RoomCode}}
 	if n != nil {
 		v4, v6 := n.Endpoints()

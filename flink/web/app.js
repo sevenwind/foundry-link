@@ -96,6 +96,8 @@ function show(id) {
 function render(s) {
   S = s;
   $('#ver').textContent = 'v' + s.version;
+  $('#update-bar').hidden = !s.update;
+  if (s.update) { $('#update-ver').textContent = 'v' + s.update.version; $('#update-link').href = s.update.url; }
   $('#btn-role').hidden = !s.mode;
   $('#log-card').hidden = !s.mode;
   $('#log').textContent = (s.log || []).join('\n');
